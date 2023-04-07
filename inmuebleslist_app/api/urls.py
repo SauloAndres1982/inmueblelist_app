@@ -1,7 +1,21 @@
-from django.urls import path
-from inmuebleslist_app.api.views import inmueble_list, inmueble_detalle 
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+#from inmuebleslist_app.api.views import inmueble_list, inmueble_detalle 
+from inmuebleslist_app.api.views import EdificacionDetalleAV, EdificacionAV, EmpresaAV, EmpresaDetalleAV, ComentarioList, ComentarioDetail, ComentarioCreate, EmpresaVS
+
+router = DefaultRouter()
+router.register("empresa", EmpresaVS, basename="empresa")
 
 urlpatterns = [
-    path("list/", inmueble_list, name = "inmueble-list"),
-    path("<int:pk>", inmueble_detalle, name="inmueble-detalle"),
+    path("edificacion/", EdificacionAV.as_view(), name = "edificacion-list"),
+    path("edificacion/<int:pk>", EdificacionDetalleAV.as_view(), name="edificacion-detail"),
+
+    path("", include(router.urls)), 
+    # path("empresa/", EmpresaAV.as_view(), name="empresa"),
+    # path("empresa/<int:pk>", EmpresaDetalleAV.as_view(), name="empresa-detail" )
+
+
+    path("edificacion/<int:pk>/comentario-create", ComentarioCreate.as_view(), name="comentario-create"),
+    path("edificacion/<int:pk>/comentario/", ComentarioList.as_view(), name="comentario-list"),
+    path("edificacion/comentario/<int:pk>", ComentarioDetail.as_view(), name="comentario-detail" )
 ]
