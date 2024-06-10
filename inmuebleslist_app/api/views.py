@@ -1,12 +1,16 @@
-from rest_framework.response import Response
 from inmuebleslist_app.models import Edificacion, Empresa, Comentario
 from inmuebleslist_app.api.serializers import EdificacionSerializer, EmpresaSerializer, ComentarioSerializer
+from inmuebleslist_app.api.permissions import AdminOrReadOnly, ComentarioUserOrReadOnly
+
+from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework import generics, mixins
 from rest_framework import viewsets
-from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
+
+from django.shortcuts import get_object_or_404
 
 class ComentarioCreate(generics.CreateAPIView):
     serializer_class = ComentarioSerializer
@@ -17,10 +21,21 @@ class ComentarioCreate(generics.CreateAPIView):
     def perform_create(self, serializer):
         pk = self.kwargs.get("pk")
         inmueble = Edificacion.objects.get(pk=pk)
+
         user = self.request.user
         comentario_queryset = Comentario.objects.filter(edificacion=inmueble, comentario_user=user)
+
         if comentario_queryset.exists():
             raise ValidationError("El usuario ya escribio un comentario para este inmueble")
+
+        if inmueble.number_calificacion == 0:
+            inmueble.avg_calificacion = serializer.validated_data["calificacion"]
+
+        else:
+            inmueble.avg_calificacion = (serializer.validated_data["calificacion"] + inmueble.avg_calificacion * inmueble.number_calificacion) / (inmueble.number_calificacion + 1)
+
+        inmueble.number_calificacion += 1
+        inmueble.save()
         serializer.save(edificacion=inmueble, comentario_user=user)
 
 class ComentarioList(generics.ListCreateAPIView):
@@ -31,8 +46,10 @@ class ComentarioList(generics.ListCreateAPIView):
         return Comentario.objects.filter(edificacion=pk)         
 
 class ComentarioDetail(generics.RetrieveUpdateDestroyAPIView):
+
     queryset = Comentario.objects.all()
     serializer_class = ComentarioSerializer
+    permission_classes = [ComentarioUserOrReadOnly]
 
 # class ComentarioList(mixins.ListModelMixin, mixins.CreateModelMixin, generics.GenericAPIView):
 #     queryset = Comentario.objects.all()
@@ -53,6 +70,7 @@ class ComentarioDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class EmpresaVS(viewsets.ViewSet):
 
+    permission_classes = [AdminOrReadOnly]
     def list(self, request):
         queryset = Empresa.objects.all()
         serializers = EmpresaSerializer(queryset, many=True)
