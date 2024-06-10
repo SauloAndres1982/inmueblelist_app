@@ -1,20 +1,27 @@
 from rest_framework.response import Response
 from inmuebleslist_app.models import Edificacion, Empresa, Comentario
 from inmuebleslist_app.api.serializers import EdificacionSerializer, EmpresaSerializer, ComentarioSerializer
-#from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework import generics, mixins
 from rest_framework import viewsets
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
 
 class ComentarioCreate(generics.CreateAPIView):
     serializer_class = ComentarioSerializer
+
+    def get_queryset(self):
+        return Comentario.objects.all()
     
     def perform_create(self, serializer):
         pk = self.kwargs.get("pk")
-        edificacion = Edificacion.objects.get(pk=pk)
-        serializer.save(edificacion=edificacion)
+        inmueble = Edificacion.objects.get(pk=pk)
+        user = self.request.user
+        comentario_queryset = Comentario.objects.filter(edificacion=inmueble, comentario_user=user)
+        if comentario_queryset.exists():
+            raise ValidationError("El usuario ya escribio un comentario para este inmueble")
+        serializer.save(edificacion=inmueble, comentario_user=user)
 
 class ComentarioList(generics.ListCreateAPIView):
     #queryset = Comentario.objects.all()
