@@ -1,6 +1,6 @@
 from inmuebleslist_app.models import Edificacion, Empresa, Comentario
 from inmuebleslist_app.api.serializers import EdificacionSerializer, EmpresaSerializer, ComentarioSerializer
-from inmuebleslist_app.api.permissions import AdminOrReadOnly, ComentarioUserOrReadOnly
+from inmuebleslist_app.api.permissions import IsAdminOrReadOnly, IsComentarioUserOrReadOnly
 
 from rest_framework.response import Response
 from rest_framework import status
@@ -13,9 +13,10 @@ from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 
 class ComentarioCreate(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated] 
     serializer_class = ComentarioSerializer
 
-    def get_queryset(self):
+    def get_queryset(self): 
         return Comentario.objects.all()
     
     def perform_create(self, serializer):
@@ -39,17 +40,18 @@ class ComentarioCreate(generics.CreateAPIView):
         serializer.save(edificacion=inmueble, comentario_user=user)
 
 class ComentarioList(generics.ListCreateAPIView):
+    #permission_classes = [IsComentarioUserOrReadOnly, IsAuthenticated]
     #queryset = Comentario.objects.all()
     serializer_class = ComentarioSerializer
+    permission_classes = [IsAuthenticated]
     def get_queryset(self):
         pk = self.kwargs["pk"]
         return Comentario.objects.filter(edificacion=pk)         
 
 class ComentarioDetail(generics.RetrieveUpdateDestroyAPIView):
-
+    permission_classes = [IsComentarioUserOrReadOnly]
     queryset = Comentario.objects.all()
     serializer_class = ComentarioSerializer
-    permission_classes = [ComentarioUserOrReadOnly]
 
 # class ComentarioList(mixins.ListModelMixin, mixins.CreateModelMixin, generics.GenericAPIView):
 #     queryset = Comentario.objects.all()
@@ -70,7 +72,7 @@ class ComentarioDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class EmpresaVS(viewsets.ViewSet):
 
-    permission_classes = [AdminOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
     def list(self, request):
         queryset = Empresa.objects.all()
         serializers = EmpresaSerializer(queryset, many=True)
@@ -113,12 +115,9 @@ class EmpresaVS(viewsets.ViewSet):
         empresa.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-
-
-
     
 class EmpresaAV(APIView):
+    permission_classes = [IsAdminOrReadOnly]
     def get(self, request):
         empresas = Empresa.objects.all()
         serializer = EmpresaSerializer(empresas, many=True, context={'request': request})
@@ -134,6 +133,7 @@ class EmpresaAV(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
         
 class EmpresaDetalleAV(APIView):
+    permission_classes = [IsAdminOrReadOnly]
     def get(self, request, pk):
         try:
             empresa = Empresa.objects.get(pk=pk)
@@ -164,7 +164,7 @@ class EmpresaDetalleAV(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class EdificacionAV(APIView):
-
+    permission_classes = [IsAdminOrReadOnly]
     def get(self, request):
         edificaciones = Edificacion.objects.all()
         serializer = EdificacionSerializer(edificaciones, many=True)
@@ -179,7 +179,7 @@ class EdificacionAV(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class EdificacionDetalleAV(APIView):
-
+    permission_classes = [IsAdminOrReadOnly]
     def get(self, request, pk):
         try:
             edificacion = Edificacion.objects.get(pk=pk)
