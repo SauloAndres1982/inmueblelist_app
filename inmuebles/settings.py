@@ -61,12 +61,22 @@ WSGI_APPLICATION = "inmuebles.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
+
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "USER": "saulo_db",
+        "NAME": "inmuebledb",
+        "PASSWORD": "25162516",
+        "HOST":'localhost',
     }
-}
+}   
 
 
 # Password validation
@@ -122,10 +132,11 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '5/day',
         'user': '3/day',
-        'comentario-create': "2/day",
-        "comentario-list": "5/day",
-        "comentario-detail": "3/day"
-    } 
+        'comentario-create': "2000/day",
+        "comentario-list": "5000/day",
+        "comentario-detail": "3000/day"
+    },
+    'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     
 }
 
